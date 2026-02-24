@@ -14,3 +14,8 @@ spring:
     show-sql: true
   flyway:
     enabled: false
+  jwt:
+    public:
+      key: "classpath:app.pub"
+    private:
+      key: "classpath:app.key"
