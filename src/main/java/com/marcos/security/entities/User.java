@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.marcos.security.dto.LoginRequest;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -71,6 +75,12 @@ public class User {
 
 	public void setRoles(Set<Role> roles) {
 		this.roles = roles;
+	}
+
+	public boolean isLoginCorrect(LoginRequest loginRequest, PasswordEncoder passwordEncoder) {
+		return passwordEncoder.matches(loginRequest.password(), this.password);
+		//Compara a senha "padrão" do loginRequest, com a senha criptografada no banco de dados.
+		
 	}
 	
 	
