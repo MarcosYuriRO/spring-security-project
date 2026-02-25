@@ -1,21 +1,20 @@
 spring:
   application:
     name: security
-  
   datasource:
     url: jdbc:postgresql://localhost:5432/${DB_NAME}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
   flyway:
-    enabled: false
-  jwt:
-    public:
-      key: "classpath:app.pub"
-    private:
-      key: "classpath:app.key"
+    enabled: true
+
+jwt:
+  public:
+    key: "classpath:app.pub"
+  private:
+    key: "classpath:app.key"
