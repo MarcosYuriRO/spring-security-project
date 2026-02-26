@@ -34,6 +34,7 @@ public class TokenController {
 	
 	@PostMapping("/login")
 	public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest){
+		//A partir do login do usuário, dá a ele umm identificador com oque se pode fazer sem ter que recolocar a senha
 		Optional<User> user = userRepository.findByUsername(loginRequest.username());
 		
 		if (user.isEmpty() || !user.get().isLoginCorrect(loginRequest, passwordEncoder)) {
@@ -49,8 +50,10 @@ public class TokenController {
 				.issuedAt(now)
 				.expiresAt(now.plusSeconds(expiresIn))
 				.build();
+		//claims: informações sobre o usuário
 		
 		var jwtValue = jwtEnconder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+		//Cria um objeto das claims, a codifica e depois pega o valor do token
 		
 		return ResponseEntity.ok(new LoginResponse(jwtValue, expiresIn));
 				
