@@ -39,6 +39,7 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
 		http
 			.authorizeHttpRequests(authorize -> authorize
+					.requestMatchers(HttpMethod.POST, "/users").permitAll()
 					.requestMatchers(HttpMethod.POST, "/login").permitAll()
 					.anyRequest().authenticated())
 			//Define que toda requisição (exceto a /login com método post) tem que ser autenticada.
