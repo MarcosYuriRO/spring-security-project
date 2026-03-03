@@ -2,6 +2,7 @@ package com.marcos.security.controller;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.marcos.security.dto.LoginRequest;
 import com.marcos.security.dto.LoginResponse;
+import com.marcos.security.entities.Role;
 import com.marcos.security.entities.User;
 import com.marcos.security.repository.UserRepository;
 
@@ -44,11 +46,17 @@ public class TokenController {
 		Instant now = Instant.now();
 		long expiresIn = 300L;
 		
+		var scopes = user.get().getRoles()
+				.stream()
+				.map(Role::getName)
+				.collect(Collectors.joining(" "));
+		
 		var claims = JwtClaimsSet.builder()
 				.issuer("security")
 				.subject(user.get().getUserId().toString())
 				.issuedAt(now)
 				.expiresAt(now.plusSeconds(expiresIn))
+				.claim("scope", scopes)
 				.build();
 		//claims: informações sobre o usuário
 		
