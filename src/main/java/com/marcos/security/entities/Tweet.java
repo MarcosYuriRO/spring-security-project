@@ -15,7 +15,7 @@ public class Tweet {
 	}
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "tweet_id")
 	private long tweetId;
 	
