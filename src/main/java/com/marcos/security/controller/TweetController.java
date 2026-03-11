@@ -1,20 +1,28 @@
 package com.marcos.security.controller;
 
+import java.awt.print.Pageable;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.context.support.BeanDefinitionDsl.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.marcos.security.dto.CreateTweetDto;
+import com.marcos.security.dto.FeedDto;
+import com.marcos.security.dto.FeedItemDto;
 import com.marcos.security.entities.Tweet;
 import com.marcos.security.entities.User;
 import com.marcos.security.repository.TweetRepository;
@@ -30,6 +38,17 @@ public class TweetController {
 	public TweetController(TweetRepository tweetRepository, UserRepository userRepository) {
 		this.tweetRepository = tweetRepository;
 		this.userRepository = userRepository;
+	}
+	
+	@GetMapping("/feed")
+	public ResponseEntity<FeedDto> feed(@RequestParam(value = "page", defaultValue = "0") int page, 
+			@RequestParam(value = "pageSize", defaultValue = "10") int pageSize){
+		var tweets = tweetRepository.findAll(PageRequest.of(page, pageSize, Sort.Direction.DESC, "creationTimestamp"))
+				.map(tweet -> new FeedItemDto(tweet.getTweetId(), tweet.getContent(), tweet.getUser().getUsername()));
+		
+		return ResponseEntity.ok(new FeedDto(
+				tweets.getContent(), page, pageSize,tweets.getTotalPages(), tweets.getTotalElements()));
+		
 	}
 	
 	@PostMapping("/tweets")
@@ -56,7 +75,7 @@ public class TweetController {
 		
 		boolean isAdmin = user.get().getRoles()
 			.stream()
-			.anyMatch(role -> role.getName().equalsIgnoreCase(com.marcos.security.entities.Role.Values.ADMIN.name())));
+			.anyMatch(role -> role.getName().equalsIgnoreCase(com.marcos.security.entities.Role.Values.ADMIN.name()));
 		
 		if (isAdmin || tweet.getUser().getUserId().equals(UUID.fromString(token.getName()))) {
 			tweetRepository.deleteById(tweetId);
