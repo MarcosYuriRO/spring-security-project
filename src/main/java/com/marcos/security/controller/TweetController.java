@@ -3,11 +3,16 @@ package com.marcos.security.controller;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.support.BeanDefinitionDsl.Role;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.marcos.security.dto.CreateTweetDto;
 import com.marcos.security.entities.Tweet;
@@ -41,5 +46,25 @@ public class TweetController {
 		
 		return ResponseEntity.ok().build();
 		
+	}
+	
+	@DeleteMapping("/tweets/{id}")
+	public ResponseEntity<Void> deleteTweet(@PathVariable("id") Long tweetId, JwtAuthenticationToken token){
+		Optional<User> user = userRepository.findById(UUID.fromString(token.getName()));
+		Tweet tweet = tweetRepository.findById(tweetId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+		
+		boolean isAdmin = user.get().getRoles()
+			.stream()
+			.anyMatch(role -> role.getName().equalsIgnoreCase(com.marcos.security.entities.Role.Values.ADMIN.name())));
+		
+		if (isAdmin || tweet.getUser().getUserId().equals(UUID.fromString(token.getName()))) {
+			tweetRepository.deleteById(tweetId);
+		} else {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
+		
+		
+		return ResponseEntity.ok().build();
 	}
 }
