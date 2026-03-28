@@ -1,10 +1,8 @@
 package com.marcos.security.controller;
 
-import java.awt.print.Pageable;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.context.support.BeanDefinitionDsl.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -27,24 +25,25 @@ import com.marcos.security.entities.Tweet;
 import com.marcos.security.entities.User;
 import com.marcos.security.repository.TweetRepository;
 import com.marcos.security.repository.UserRepository;
+import com.marcos.security.service.TweetService;
+import com.marcos.security.service.UserService;
 
 @RestController
 public class TweetController {
 
-	private final TweetRepository tweetRepository;
+	private final TweetService tweetService;
 	
-	private final UserRepository userRepository;
-
-	public TweetController(TweetRepository tweetRepository, UserRepository userRepository) {
-		this.tweetRepository = tweetRepository;
-		this.userRepository = userRepository;
+	private final UserService userService;
+	
+	public TweetController(TweetService tweetService, UserService userService) {
+		this.tweetService = tweetService;
+		this.userService = userService;
 	}
-	
+
 	@GetMapping("/feed")
 	public ResponseEntity<FeedDto> feed(@RequestParam(value = "page", defaultValue = "0") int page, 
 			@RequestParam(value = "pageSize", defaultValue = "10") int pageSize){
-		var tweets = tweetRepository.findAll(PageRequest.of(page, pageSize, Sort.Direction.DESC, "creationTimestamp"))
-				.map(tweet -> new FeedItemDto(tweet.getTweetId(), tweet.getContent(), tweet.getUser().getUsername()));
+		Page<FeedItemDto> tweets = tweetService.findAll(page, pageSize);
 		
 		return ResponseEntity.ok(new FeedDto(
 				tweets.getContent(), page, pageSize,tweets.getTotalPages(), tweets.getTotalElements()));
@@ -54,31 +53,26 @@ public class TweetController {
 	@PostMapping("/tweets")
 	public ResponseEntity<Void> createTweet(@RequestBody CreateTweetDto dto, JwtAuthenticationToken token) {
 		
-		Optional<User> user = userRepository.findById(UUID.fromString(token.getName()));
+		Optional<User> user = userService.findById(UUID.fromString(token.getName()));
 		
-		Tweet tweet = new Tweet();
+		Tweet tweet = tweetService.buildTweet(user.get(), dto.content());
 		
-		tweet.setUser(user.get());
-		tweet.setContent(dto.content());
-		
-		tweetRepository.save(tweet);
+		tweetService.save(tweet);
 		
 		return ResponseEntity.ok().build();
-		
 	}
 	
 	@DeleteMapping("/tweets/{id}")
 	public ResponseEntity<Void> deleteTweet(@PathVariable("id") Long tweetId, JwtAuthenticationToken token){
-		Optional<User> user = userRepository.findById(UUID.fromString(token.getName()));
-		Tweet tweet = tweetRepository.findById(tweetId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+		Optional<User> user = userService.findById(UUID.fromString(token.getName()));
+		Tweet tweet = tweetService.findById(tweetId).get();
 		
 		boolean isAdmin = user.get().getRoles()
 			.stream()
 			.anyMatch(role -> role.getName().equalsIgnoreCase(com.marcos.security.entities.Role.Values.ADMIN.name()));
 		
 		if (isAdmin || tweet.getUser().getUserId().equals(UUID.fromString(token.getName()))) {
-			tweetRepository.deleteById(tweetId);
+			tweetService.deleteById(tweetId);
 		} else {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}

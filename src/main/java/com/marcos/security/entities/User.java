@@ -9,9 +9,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.marcos.security.dto.LoginRequest;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 
 @Entity
 @Table(name = "users")
+@Builder
 public class User {
 	
 	public User() {

@@ -1,70 +1,51 @@
 package com.marcos.security.controller;
 
-import java.time.Instant;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.marcos.security.dto.LoginRequest;
 import com.marcos.security.dto.LoginResponse;
-import com.marcos.security.entities.Role;
 import com.marcos.security.entities.User;
-import com.marcos.security.repository.UserRepository;
+import com.marcos.security.service.TokenService;
+import com.marcos.security.service.UserService;
 
 @RestController
 public class TokenController {
 
+	private final UserService userService;
+	private final TokenService tokenService;
 	private final JwtEncoder jwtEnconder;
-	private final UserRepository userRepository;
 	private final BCryptPasswordEncoder passwordEncoder;
 
-	public TokenController(JwtEncoder jwtEnconder, 
-			UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+	public TokenController(JwtEncoder jwtEnconder,
+			BCryptPasswordEncoder passwordEncoder, TokenService tokenService, UserService userService) {
 		this.jwtEnconder = jwtEnconder;
-		this.userRepository = userRepository;
+		this.userService = userService;
+		this.tokenService = tokenService;
 		this.passwordEncoder = passwordEncoder;
 	}
 	
 	@PostMapping("/login")
 	public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest){
 		//A partir do login do usuário, dá a ele umm identificador com oque se pode fazer sem ter que recolocar a senha
-		Optional<User> user = userRepository.findByUsername(loginRequest.username());
+		Optional<User> user = userService.findByUsername(loginRequest.username());
 		
 		if (user.isEmpty() || !user.get().isLoginCorrect(loginRequest, passwordEncoder)) {
 			throw new BadCredentialsException("user or password is invalid");
 		}
 		
-		Instant now = Instant.now();
-		long expiresIn = 300L;
+		String jwtValue = tokenService.getJwtValue(user, jwtEnconder);
 		
-		var scopes = user.get().getRoles()
-				.stream()
-				.map(Role::getName)
-				.collect(Collectors.joining(" "));
+		long expiresIn = tokenService.getExpiresIn();
 		
-		var claims = JwtClaimsSet.builder()
-				.issuer("security")
-				.subject(user.get().getUserId().toString())
-				.issuedAt(now)
-				.expiresAt(now.plusSeconds(expiresIn))
-				.claim("scope", scopes)
-				.build();
-		//claims: informações sobre o usuário
-		
-		var jwtValue = jwtEnconder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-		//Cria um objeto das claims, a codifica e depois pega o valor do token
-		
-		return ResponseEntity.ok(new LoginResponse(jwtValue, expiresIn));
-				
+		return ResponseEntity.ok(new LoginResponse(jwtValue, expiresIn));	
 	}
 	
 }

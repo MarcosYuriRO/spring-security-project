@@ -20,41 +20,40 @@ import com.marcos.security.entities.Role;
 import com.marcos.security.entities.User;
 import com.marcos.security.repository.RoleRepository;
 import com.marcos.security.repository.UserRepository;
+import com.marcos.security.service.RoleService;
+import com.marcos.security.service.UserService;
 
 import jakarta.transaction.Transactional;
 
 @RestController
 public class UserController {
 
-	private final UserRepository userRepository;
-	private final RoleRepository roleRepository;
-	private final BCryptPasswordEncoder passwordEncoder;
+	private final UserService userService;
+	private final RoleService roleService;
 	
-	public UserController(UserRepository userRepository, RoleRepository roleRepository, BCryptPasswordEncoder passwordEncoder) {
-
-		this.userRepository = userRepository;
-		this.roleRepository = roleRepository;
-		this.passwordEncoder = passwordEncoder;
+	public UserController(UserRepository userRepository, 
+			RoleRepository roleRepository, 
+			RoleService roleService, 
+			UserService userService) {
+		this.userService = userService;
+		this.roleService = roleService;
 	}
 	
 	@Transactional
 	@PostMapping("/users")
 	public ResponseEntity<Void> newUser (@RequestBody CreateUserDto dto){
 		
-		Role basicRole = roleRepository.findByNameIgnoreCase(Role.Values.BASIC.name());
+		Role basicRole = roleService.findByName(Role.Values.BASIC.name());
 		
-		Optional<User> userFromDb = userRepository.findByUsername(dto.username());
+		Optional<User> existentUser = userService.findByUsername(dto.username());
 		
-		if(userFromDb.isPresent()) {
+		if(existentUser.isPresent()) {
 			throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
 		}
 		
-		User user = new User();
-		user.setUsername(dto.username());
-		user.setPassword(passwordEncoder.encode(dto.password()));
-		user.setRoles(Set.of(basicRole));
+		User user = userService.buildUser(dto.username(), dto.password(), Set.of(basicRole));
 		
-		userRepository.save(user);
+		userService.save(user);
 		
 		return ResponseEntity.ok().build();
 	}
@@ -62,7 +61,7 @@ public class UserController {
 	@GetMapping("/users")
 	@PreAuthorize("hasAuthority('SCOPE_admin')")
 	public ResponseEntity<List<User>> listUsers() {
-		List<User> users = userRepository.findAll();
+		List<User> users = userService.findAll();
 		
 		return ResponseEntity.ok(users);
 	}
