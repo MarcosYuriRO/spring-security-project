@@ -9,16 +9,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.marcos.security.dto.LoginRequest;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
-	
-	public User() {
-		super();
-	}
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
