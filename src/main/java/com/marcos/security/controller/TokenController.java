@@ -46,12 +46,12 @@ public class TokenController {
 		Instant now = Instant.now();
 		long expiresIn = 300L;
 		
-		var scopes = user.get().getRoles()
+		String scopes = user.get().getRoles()
 				.stream()
 				.map(Role::getName)
 				.collect(Collectors.joining(" "));
 		
-		var claims = JwtClaimsSet.builder()
+		JwtClaimsSet claims = JwtClaimsSet.builder()
 				.issuer("security")
 				.subject(user.get().getUserId().toString())
 				.issuedAt(now)
@@ -60,7 +60,7 @@ public class TokenController {
 				.build();
 		//claims: informações sobre o usuário
 		
-		var jwtValue = jwtEnconder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+		String jwtValue = jwtEnconder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
 		//Cria um objeto das claims, a codifica e depois pega o valor do token
 		
 		return ResponseEntity.ok(new LoginResponse(jwtValue, expiresIn));
