@@ -1,67 +1,76 @@
-package com.marcos.security.controller;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import java.util.Optional;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-
-import com.marcos.security.dto.LoginRequest;
-import com.marcos.security.dto.LoginResponse;
-import com.marcos.security.entities.User;
-import com.marcos.security.helper.UserHelper;
-import com.marcos.security.repository.UserRepository;
-
-@ExtendWith(MockitoExtension.class)
-public class TokenControllerTest {
+	package com.marcos.security.controller;
 	
-	@Autowired
-	TokenController tokenController;
+	import static org.mockito.ArgumentMatchers.any;
+	import static org.mockito.Mockito.when;
+	import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+	import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+	import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+	import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 	
-	@Mock
-	UserRepository userRepository;
+	import java.util.Optional;
 	
-	@Mock
-	PasswordEncoder passwordEncoder;
+	import org.junit.jupiter.api.Test;
+	import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+	import org.springframework.http.MediaType;
+	import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+	import org.springframework.security.oauth2.jwt.JwtEncoder;
+	import org.springframework.security.test.context.support.WithMockUser;
+	import org.springframework.test.context.bean.override.mockito.MockitoBean;
+	import org.springframework.test.web.servlet.MockMvc;
 	
-	@Mock
-	JwtEncoder jwtEncoder;
-
-	@Test
-	void givenAValidLoginRequest_whenLoginIsCalled_thenTheHttpResponseMustBeOk() {
-		LoginRequest loginRequest = new LoginRequest("user", "password");
+	import com.fasterxml.jackson.databind.ObjectMapper;
+	import com.marcos.security.dto.LoginRequest;
+	import com.marcos.security.entities.User;
+	import com.marcos.security.helper.UserHelper;
+	import com.marcos.security.service.TokenService;
+	import com.marcos.security.service.UserService;
+	
+	@WebMvcTest(TokenController.class)
+	@AutoConfigureMockMvc(addFilters = false)
+	public class TokenControllerTest {
 		
-		Optional<User> user = Optional.of(UserHelper.createValidUser());
+		@Autowired
+		private MockMvc mvc;
 		
-		when(userRepository.findByUsername(loginRequest.username()))
-			.thenReturn(user);
+		@Autowired
+		private ObjectMapper objectMapper;
 		
-		when(user.get().isLoginCorrect(loginRequest, passwordEncoder))
-			.thenReturn(true);
+		@MockitoBean
+		private UserService userService;
 		
-		Jwt jwt = Mockito.mock(Jwt.class);
+		@MockitoBean
+		private TokenService tokenService;
 		
-		when(jwtEncoder.encode(any()))
-			.thenReturn(jwt);
+		@MockitoBean
+		private BCryptPasswordEncoder passwordEncoder;
 		
-		when(jwt.getTokenValue())
-			.thenReturn("token");
-		
-		ResponseEntity<LoginResponse> result = tokenController.login(loginRequest);
-		
-		assertEquals(, result);
+		@MockitoBean
+		private JwtEncoder jwtEncoder;
 		
 		
+		@Test
+		@WithMockUser
+		void givenAValidLoginRequest_whenLoginIsCalled_thenTheHttpResponseMustBeOk() throws Exception {
+			
+			LoginRequest request = new LoginRequest("user", "password");
+			
+			User user = UserHelper.createValidUser();
+			
+			when(userService.findByUsername(request.username())).thenReturn(Optional.of(user));
+			
+			when(passwordEncoder.matches(any(), any())).thenReturn(true);
+			
+			when(tokenService.getJwtValue(any(), any())).thenReturn("token");
+			
+			when(tokenService.getExpiresIn()).thenReturn(300L);
+			
+			mvc.perform(post("/login")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+				.andExpect(jsonPath("$.accessToken").value("token"))
+				.andExpect(jsonPath("$.expiresIn").value(300L));
+			
+		}
 	}
-}
