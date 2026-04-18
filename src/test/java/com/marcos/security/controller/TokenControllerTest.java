@@ -1,6 +1,7 @@
 	package com.marcos.security.controller;
 	
-	import static org.mockito.ArgumentMatchers.any;
+	import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 	import static org.mockito.Mockito.when;
 	import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 	import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,8 +14,10 @@
 	import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-	import org.springframework.http.MediaType;
-	import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 	import org.springframework.security.oauth2.jwt.JwtEncoder;
 	import org.springframework.security.test.context.support.WithMockUser;
 	import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -72,5 +75,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 				.andExpect(jsonPath("$.accessToken").value("token"))
 				.andExpect(jsonPath("$.expiresIn").value(300L));
 			
+		}
+		
+		@Test
+		@WithMockUser
+		void given_when_then() throws Exception {
+			MockHttpServletResponse response = mvc.perform(post("/login"))
+					.andReturn().getResponse();
+			
+			assertEquals(HttpStatus.BAD_REQUEST, response);
 		}
 	}
