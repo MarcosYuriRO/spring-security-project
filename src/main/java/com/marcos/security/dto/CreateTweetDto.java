@@ -1,5 +1,8 @@
 package com.marcos.security.dto;
 
-public record CreateTweetDto(String content) {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record CreateTweetDto(@NotBlank @NotNull String content) {
 
 }
