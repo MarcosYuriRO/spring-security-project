@@ -5,6 +5,8 @@ import java.time.Instant;
 import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "tweets")
@@ -21,8 +23,11 @@ public class Tweet {
 	
 	@ManyToOne
 	@JoinColumn(name = "user_id")
+	@NotNull
 	private User user;
 	
+	@NotBlank
+	@NotNull
 	private String content;
 	
 	//Instant: momento exato captado de algo (considerando fuso-horário)

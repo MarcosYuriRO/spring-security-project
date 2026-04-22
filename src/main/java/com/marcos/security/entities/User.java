@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.marcos.security.dto.LoginRequest;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -26,8 +28,12 @@ public class User {
 	private UUID userId;
 	
 	@Column(unique = true)
+	@NotBlank 
+	@NotNull
 	private String username;
 	
+	@NotBlank 
+	@NotNull
 	private String password;
 	
 	@Column(name = "user_tweets")
