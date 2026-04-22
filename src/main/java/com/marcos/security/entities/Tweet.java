@@ -67,5 +67,4 @@ public class Tweet {
 		this.creationTimestamp = creationTimestamp;
 	}
 	
-	
 }
