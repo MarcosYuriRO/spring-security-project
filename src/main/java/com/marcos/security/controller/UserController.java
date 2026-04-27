@@ -24,6 +24,7 @@ import com.marcos.security.service.RoleService;
 import com.marcos.security.service.UserService;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 
 @RestController
 public class UserController {
@@ -41,7 +42,7 @@ public class UserController {
 	
 	@Transactional
 	@PostMapping("/users")
-	public ResponseEntity<Void> newUser (@RequestBody CreateUserDto dto){
+	public ResponseEntity<Void> newUser (@RequestBody @Valid CreateUserDto dto){
 		
 		Role basicRole = roleService.findByName(Role.Values.BASIC.name());
 		

@@ -16,6 +16,8 @@ import com.marcos.security.entities.User;
 import com.marcos.security.service.TokenService;
 import com.marcos.security.service.UserService;
 
+import jakarta.validation.Valid;
+
 @RestController
 public class TokenController {
 
@@ -33,7 +35,7 @@ public class TokenController {
 	}
 	
 	@PostMapping("/login")
-	public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest){
+	public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest loginRequest){
 		//A partir do login do usuário, dá a ele umm identificador com oque se pode fazer sem ter que recolocar a senha
 		Optional<User> user = userService.findByUsername(loginRequest.username());
 		
