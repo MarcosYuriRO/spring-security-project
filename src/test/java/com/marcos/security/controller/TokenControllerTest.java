@@ -57,7 +57,7 @@ import com.marcos.security.entities.User;
 		
 		@Test
 		@WithMockUser
-		void givenAValidLoginRequest_whenLoginIsCalled_thenTheHttpResponseMustBeOk() throws Exception {
+		void givenValidLoginRequest_whenLogin_thenReturnHttpStatusOk() throws Exception {
 			
 			LoginRequest request = new LoginRequest("user", "password");
 			
@@ -85,7 +85,7 @@ import com.marcos.security.entities.User;
 		
 		@Test
 		@WithMockUser
-		void given_when_then() throws Exception {
+		void givenBlankBody_whenLogin_thenthenReturnHttpStatusBadRequest() throws Exception {
 			LoginRequest request = new LoginRequest(" ", " ");
 			
 			mvc.perform(post("/login")
