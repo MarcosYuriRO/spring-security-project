@@ -7,8 +7,9 @@ import static org.mockito.ArgumentMatchers.any;
 	import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 	import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 	import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-	
-	import java.util.Optional;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Optional;
 	
 	import org.junit.jupiter.api.Test;
 	import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 	
 	import com.fasterxml.jackson.databind.ObjectMapper;
 	import com.marcos.security.dto.LoginRequest;
-	import com.marcos.security.entities.User;
+import com.marcos.security.dto.LoginResponse;
+import com.marcos.security.entities.User;
 	import com.marcos.security.helper.UserHelper;
 	import com.marcos.security.service.TokenService;
 	import com.marcos.security.service.UserService;
@@ -61,28 +63,36 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 			
 			User user = UserHelper.createValidUser();
 			
+			LoginResponse response = new LoginResponse("token", 300L);
+			
 			when(userService.findByUsername(request.username())).thenReturn(Optional.of(user));
 			
 			when(passwordEncoder.matches(any(), any())).thenReturn(true);
 			
-			when(tokenService.getJwtValue(any(), any())).thenReturn("token");
+			when(tokenService.getJwtValue(any(), any())).thenReturn(response.accessToken());
 			
-			when(tokenService.getExpiresIn()).thenReturn(300L);
+			when(tokenService.getExpiresIn()).thenReturn(response.expiresIn());
 			
 			mvc.perform(post("/login")
 					.contentType(MediaType.APPLICATION_JSON)
-					.content(objectMapper.writeValueAsString(request)))
-				.andExpect(jsonPath("$.accessToken").value("token"))
-				.andExpect(jsonPath("$.expiresIn").value(300L));
+					.content(objectMapper.writeValueAsString(request))
+					.with(csrf()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.accessToken").value(response.accessToken()))
+				.andExpect(jsonPath("$.expiresIn").value(response.expiresIn()));
 			
 		}
 		
 		@Test
 		@WithMockUser
 		void given_when_then() throws Exception {
-			MockHttpServletResponse response = mvc.perform(post("/login"))
-					.andReturn().getResponse();
+			LoginRequest request = new LoginRequest(" ", " ");
 			
-			assertEquals(HttpStatus.BAD_REQUEST, response);
+			mvc.perform(post("/login")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request))
+					.with(csrf()))
+					.andExpect(status().isBadRequest());
+	
 		}
 	}
