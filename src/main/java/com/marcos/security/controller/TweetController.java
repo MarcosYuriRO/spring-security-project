@@ -28,6 +28,8 @@ import com.marcos.security.repository.UserRepository;
 import com.marcos.security.service.TweetService;
 import com.marcos.security.service.UserService;
 
+import jakarta.validation.Valid;
+
 @RestController
 public class TweetController {
 
@@ -51,7 +53,7 @@ public class TweetController {
 	}
 	
 	@PostMapping("/tweets")
-	public ResponseEntity<Void> createTweet(@RequestBody CreateTweetDto dto, JwtAuthenticationToken token) {
+	public ResponseEntity<Void> createTweet(@RequestBody @Valid CreateTweetDto dto, JwtAuthenticationToken token) {
 		
 		Optional<User> user = userService.findById(UUID.fromString(token.getName()));
 		
